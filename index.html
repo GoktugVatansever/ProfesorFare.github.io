@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MC Sunucu</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #080b0f;
+      --bg2: #0d1117;
+      --bg3: #111820;
+      --accent: #00e5ff;
+      --accent2: #7c3aed;
+      --green: #22c55e;
+      --red: #ef4444;
+      --text: #c9d1d9;
+      --text-dim: #6b7280;
+      --border: #1e2a38;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 17px;
+      overflow-x: hidden;
+    }
+
+    /* Noise overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.4;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2.5rem;
+      height: 64px;
+      background: rgba(8,11,15,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 13px;
+      color: var(--accent);
+      text-shadow: 0 0 16px var(--accent);
+      letter-spacing: 1px;
+    }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      gap: 2rem;
+    }
+
+    nav ul a {
+      color: var(--text-dim);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 15px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      transition: color .2s;
+    }
+    nav ul a:hover { color: var(--accent); }
+
+    /* ── HERO ── */
+    #hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 7rem 2rem 4rem;
+      overflow: hidden;
+    }
+
+    /* Grid background */
+    #hero::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,229,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,229,255,0.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 30%, transparent 100%);
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0,229,255,0.08);
+      border: 1px solid rgba(0,229,255,0.25);
+      border-radius: 999px;
+      padding: 6px 18px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 2rem;
+      animation: fadeUp .6s ease both;
+    }
+
+    .dot-live {
+      width: 8px; height: 8px;
+      background: var(--green);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--green);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%,100% { opacity:1; transform:scale(1); }
+      50% { opacity:.5; transform:scale(1.3); }
+    }
+
+    h1 {
+      font-family: 'Press Start 2P', monospace;
+      font-size: clamp(22px, 4vw, 48px);
+      line-height: 1.6;
+      color: #fff;
+      text-shadow: 0 0 40px rgba(0,229,255,0.3);
+      margin-bottom: 1.5rem;
+      animation: fadeUp .7s .1s ease both;
+    }
+
+    h1 span { color: var(--accent); }
+
+    .hero-sub {
+      font-size: 18px;
+      color: var(--text-dim);
+      max-width: 520px;
+      line-height: 1.7;
+      margin-bottom: 2.5rem;
+      animation: fadeUp .7s .2s ease both;
+    }
+
+    .hero-ip {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 24px;
+      margin-bottom: 2.5rem;
+      animation: fadeUp .7s .3s ease both;
+    }
+
+    .hero-ip .label { color: var(--text-dim); font-size: 13px; letter-spacing: 1px; text-transform: uppercase; }
+    .hero-ip .ip-addr {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 13px;
+      color: var(--accent);
+    }
+
+    .copy-btn {
+      background: rgba(0,229,255,0.1);
+      border: 1px solid rgba(0,229,255,0.3);
+      color: var(--accent);
+      border-radius: 8px;
+      padding: 6px 14px;
+      cursor: pointer;
+      font-family: 'Rajdhani', sans-serif;
+      font-weight: 700;
+      font-size: 13px;
+      transition: background .2s;
+    }
+    .copy-btn:hover { background: rgba(0,229,255,0.2); }
+
+    .hero-btns {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      animation: fadeUp .7s .4s ease both;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 32px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      text-decoration: none;
+      transition: transform .15s, box-shadow .2s;
+      cursor: pointer;
+      border: none;
+    }
+    .btn:hover { transform: translateY(-2px); }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #000;
+      box-shadow: 0 0 24px rgba(0,229,255,0.3);
+    }
+    .btn-primary:hover { box-shadow: 0 0 40px rgba(0,229,255,0.5); }
+
+    .btn-discord {
+      background: #5865F2;
+      color: #fff;
+      box-shadow: 0 0 24px rgba(88,101,242,0.3);
+    }
+    .btn-discord:hover { box-shadow: 0 0 40px rgba(88,101,242,0.5); }
+
+    /* ── STATS ── */
+    .stats-bar {
+      display: flex;
+      justify-content: center;
+      gap: 3rem;
+      flex-wrap: wrap;
+      padding: 2.5rem 2rem;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg2);
+    }
+
+    .stat { text-align: center; }
+    .stat-num {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 22px;
+      color: var(--accent);
+      display: block;
+      margin-bottom: 6px;
+    }
+    .stat-label {
+      font-size: 13px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    /* ── SECTIONS ── */
+    section {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 6rem 2rem;
+    }
+
+    .section-title {
+      font-family: 'Press Start 2P', monospace;
+      font-size: clamp(14px, 2vw, 22px);
+      color: #fff;
+      margin-bottom: 0.75rem;
+      line-height: 1.6;
+    }
+    .section-title span { color: var(--accent); }
+
+    .section-sub {
+      color: var(--text-dim);
+      margin-bottom: 3rem;
+      font-size: 16px;
+    }
+
+    /* ── SERVERS GRID ── */
+    .servers-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .server-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.75rem;
+      transition: border-color .2s, transform .2s, box-shadow .2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .server-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      opacity: 0;
+      transition: opacity .2s;
+    }
+    .server-card:hover {
+      border-color: rgba(0,229,255,0.3);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+    }
+    .server-card:hover::before { opacity: 1; }
+
+    .card-icon {
+      width: 52px; height: 52px;
+      border-radius: 12px;
+      background: rgba(0,229,255,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      margin-bottom: 1.2rem;
+    }
+
+    .card-name {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 11px;
+      color: #fff;
+      margin-bottom: 0.6rem;
+      line-height: 1.8;
+    }
+
+    .card-desc {
+      color: var(--text-dim);
+      font-size: 15px;
+      line-height: 1.6;
+      margin-bottom: 1.2rem;
+    }
+
+    .card-tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .tag {
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .tag-cyan { background: rgba(0,229,255,0.1); color: var(--accent); border: 1px solid rgba(0,229,255,0.2); }
+    .tag-purple { background: rgba(124,58,237,0.1); color: #a78bfa; border: 1px solid rgba(124,58,237,0.2); }
+    .tag-green { background: rgba(34,197,94,0.1); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
+    .tag-red { background: rgba(239,68,68,0.1); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
+
+    .card-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 1rem;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+    }
+    .status-online .status-dot { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .status-online { color: var(--green); }
+    .status-offline .status-dot { background: var(--red); }
+    .status-offline { color: var(--red); }
+
+    /* ── DISCORD ── */
+    #discord {
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    #discord section {
+      display: flex;
+      gap: 4rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .discord-left { flex: 1; min-width: 260px; }
+    .discord-right { flex: 1; min-width: 260px; }
+
+    .discord-card {
+      background: #1e1f2e;
+      border-radius: 16px;
+      padding: 1.5rem;
+      border: 1px solid #2d2f45;
+    }
+
+    .discord-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 1rem;
+    }
+
+    .discord-avatar {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #5865F2, #8b5cf6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+
+    .discord-server-name {
+      font-weight: 700;
+      font-size: 16px;
+      color: #fff;
+    }
+    .discord-members {
+      font-size: 13px;
+      color: #72767d;
+    }
+
+    .discord-channels {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 1.2rem;
+    }
+
+    .channel {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      color: #96989d;
+      font-size: 15px;
+      cursor: pointer;
+      transition: background .15s, color .15s;
+    }
+    .channel:hover { background: rgba(255,255,255,0.05); color: #dcddde; }
+    .channel.active { background: rgba(255,255,255,0.08); color: #fff; }
+
+    .discord-join {
+      width: 100%;
+      padding: 12px;
+      background: #5865F2;
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-family: 'Rajdhani', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: 1px;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: background .2s;
+      text-decoration: none;
+      display: block;
+      text-align: center;
+    }
+    .discord-join:hover { background: #4752c4; }
+
+    /* ── RULES ── */
+    .rules-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .rule-item {
+      display: flex;
+      gap: 1.2rem;
+      align-items: flex-start;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.2rem 1.5rem;
+      transition: border-color .2s;
+    }
+    .rule-item:hover { border-color: rgba(0,229,255,0.2); }
+
+    .rule-num {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 11px;
+      color: var(--accent);
+      min-width: 28px;
+      margin-top: 2px;
+    }
+
+    .rule-text {
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--text);
+    }
+    .rule-text strong { color: #fff; }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      padding: 3rem 2rem;
+      border-top: 1px solid var(--border);
+      color: var(--text-dim);
+      font-size: 14px;
+    }
+
+    footer .footer-logo {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 14px;
+      color: var(--accent);
+      display: block;
+      margin-bottom: 1rem;
+    }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity .6s ease, transform .6s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #2d3748; }
+
+    @media (max-width: 640px) {
+      nav ul { gap: 1rem; }
+      .nav-logo { font-size: 10px; }
+      h1 { font-size: 16px; }
+      #discord section { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">⛏ MCServer</div>
+  <ul>
+    <li><a href="#sunucular">Sunucular</a></li>
+    <li><a href="#discord">Discord</a></li>
+    <li><a href="#kurallar">Kurallar</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<div id="hero">
+  <div class="hero-badge"><span class="dot-live"></span> Sunucu Aktif</div>
+  <h1>Türkiye'nin En İyi<br><span>MC Sunucusu</span></h1>
+  <p class="hero-sub">Arkadaşlarınla eğlenceli bir Minecraft deneyimi yaşa. Survival, mini oyunlar ve daha fazlası seni bekliyor!</p>
+  <div class="hero-ip">
+    <span class="label">Sunucu IP</span>
+    <span class="ip-addr" id="ip-text">play.mcserver.net</span>
+    <button class="copy-btn" onclick="copyIP()">Kopyala</button>
+  </div>
+  <div class="hero-btns">
+    <a href="#sunucular" class="btn btn-primary">🎮 Sunuculara Bak</a>
+    <a href="#discord" class="btn btn-discord">💬 Discord'a Katıl</a>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats-bar">
+  <div class="stat reveal">
+    <span class="stat-num">247</span>
+    <span class="stat-label">Aktif Oyuncu</span>
+  </div>
+  <div class="stat reveal">
+    <span class="stat-num">1.2K</span>
+    <span class="stat-label">Discord Üye</span>
+  </div>
+  <div class="stat reveal">
+    <span class="stat-num">5</span>
+    <span class="stat-label">Sunucu Modu</span>
+  </div>
+  <div class="stat reveal">
+    <span class="stat-num">7/24</span>
+    <span class="stat-label">Uptime</span>
+  </div>
+</div>
+
+<!-- SUNUCULAR -->
+<div id="sunucular">
+  <section>
+    <p class="section-title">🎮 <span>Sunucularımız</span></p>
+    <p class="section-sub">Farklı oyun modları seni bekliyor — istediğini seç, bağlan, oyna.</p>
+
+    <div class="servers-grid">
+
+      <div class="server-card reveal">
+        <div class="card-icon">🌍</div>
+        <div class="card-name">Survival</div>
+        <p class="card-desc">Klasik survival deneyimi. Madencilik yap, bina kur, hayatta kal. Ekonomi sistemi ve ticaret mevcut.</p>
+        <div class="card-tags">
+          <span class="tag tag-green">Survival</span>
+          <span class="tag tag-cyan">Ekonomi</span>
+        </div>
+        <div class="card-status status-online">
+          <span class="status-dot"></span> Online — 89 oyuncu
+        </div>
+      </div>
+
+      <div class="server-card reveal">
+        <div class="card-icon">⚔️</div>
+        <div class="card-name">PvP Arena</div>
+        <p class="card-desc">Rakiplerini yık, lider tablosuna çık. Kit PvP, 1v1 düellolar ve turnuvalar her gün aktif.</p>
+        <div class="card-tags">
+          <span class="tag tag-red">PvP</span>
+          <span class="tag tag-purple">Turnuva</span>
+        </div>
+        <div class="card-status status-online">
+          <span class="status-dot"></span> Online — 134 oyuncu
+        </div>
+      </div>
+
+      <div class="server-card reveal">
+        <div class="card-icon">🏗️</div>
+        <div class="card-name">Creative</div>
+        <p class="card-desc">Sınırsız blok, sınırsız alan. Hayal ettiğin her şeyi inşa et. WorldEdit desteği mevcut.</p>
+        <div class="card-tags">
+          <span class="tag tag-cyan">Creative</span>
+          <span class="tag tag-green">WorldEdit</span>
+        </div>
+        <div class="card-status status-online">
+          <span class="status-dot"></span> Online — 24 oyuncu
+        </div>
+      </div>
+
+      <div class="server-card reveal">
+        <div class="card-icon">🎲</div>
+        <div class="card-name">Mini Oyunlar</div>
+        <p class="card-desc">BedWars, SkyWars, Murder Mystery ve daha fazlası. Arkadaşlarınla parti kur ve oyna!</p>
+        <div class="card-tags">
+          <span class="tag tag-purple">BedWars</span>
+          <span class="tag tag-red">SkyWars</span>
+        </div>
+        <div class="card-status status-online">
+          <span class="status-dot"></span> Online — 67 oyuncu
+        </div>
+      </div>
+
+      <div class="server-card reveal">
+        <div class="card-icon">🏔️</div>
+        <div class="card-name">SkyBlock</div>
+        <p class="card-desc">Bir ada, sonsuz imkan. Kaynakları yönet, adanı büyüt, diğer adaları geç.</p>
+        <div class="card-tags">
+          <span class="tag tag-cyan">SkyBlock</span>
+          <span class="tag tag-green">Ekonomi</span>
+        </div>
+        <div class="card-status status-online">
+          <span class="status-dot"></span> Online — 45 oyuncu
+        </div>
+      </div>
+
+      <div class="server-card reveal">
+        <div class="card-icon">🔮</div>
+        <div class="card-name">RPG</div>
+        <p class="card-desc">Özel görevler, sınıflar, boss savaşları ve item sistemi. Tam bir RPG deneyimi.</p>
+        <div class="card-tags">
+          <span class="tag tag-purple">RPG</span>
+          <span class="tag tag-red">Boss</span>
+        </div>
+        <div class="card-status status-offline">
+          <span class="status-dot"></span> Yakında
+        </div>
+      </div>
+
+    </div>
+  </section>
+</div>
+
+<!-- DISCORD -->
+<div id="discord">
+  <section>
+    <div class="discord-left">
+      <p class="section-title">💬 <span>Discord</span> Topluluğu</p>
+      <p class="section-sub">Binlerce oyuncuyla tanış, duyuruları takip et, destek al ve turnuvalara katıl.</p>
+      <ul style="list-style:none; display:flex; flex-direction:column; gap:12px; color:var(--text); font-size:16px;">
+        <li>✅ Özel sunucu kanalları</li>
+        <li>✅ 7/24 destek</li>
+        <li>✅ Turnuva duyuruları</li>
+        <li>✅ Giveaway etkinlikleri</li>
+        <li>✅ Rank sistemi</li>
+      </ul>
+      <a href="https://discord.gg/DAVETLINKINI-YAZ" target="_blank" class="btn btn-discord" style="margin-top:2rem; display:inline-flex;">
+        💬 Discord'a Katıl
+      </a>
+    </div>
+    <div class="discord-right reveal">
+      <div class="discord-card">
+        <div class="discord-header">
+          <div class="discord-avatar">⛏</div>
+          <div>
+            <div class="discord-server-name">MC Sunucu</div>
+            <div class="discord-members">🟢 247 çevrimiçi · 1.2K üye</div>
+          </div>
+        </div>
+        <div class="discord-channels">
+          <div class="channel active"># 📢 duyurular</div>
+          <div class="channel"># 💬 genel-sohbet</div>
+          <div class="channel"># 🎮 sunucu-destek</div>
+          <div class="channel"># 🏆 turnuvalar</div>
+          <div class="channel"># 🎁 giveaway</div>
+          <div class="channel"># 📋 başvurular</div>
+        </div>
+        <a href="https://discord.gg/DAVETLINKINI-YAZ" target="_blank" class="discord-join">Sunucuya Katıl</a>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- KURALLAR -->
+<div id="kurallar">
+  <section>
+    <p class="section-title">📋 Sunucu <span>Kuralları</span></p>
+    <p class="section-sub">Herkesin keyifli vakit geçirebilmesi için lütfen kurallara uy.</p>
+    <div class="rules-list">
+      <div class="rule-item reveal">
+        <span class="rule-num">01</span>
+        <span class="rule-text"><strong>Hile / Cheat yasaktır.</strong> Hile kullanan oyuncular kalıcı olarak banlanır.</span>
+      </div>
+      <div class="rule-item reveal">
+        <span class="rule-num">02</span>
+        <span class="rule-text"><strong>Küfür ve hakaret yasaktır.</strong> Diğer oyunculara saygılı ol.</span>
+      </div>
+      <div class="rule-item reveal">
+        <span class="rule-num">03</span>
+        <span class="rule-text"><strong>Griefing yasaktır.</strong> Başkasının yapısını izinsiz yıkamazsın.</span>
+      </div>
+      <div class="rule-item reveal">
+        <span class="rule-num">04</span>
+        <span class="rule-text"><strong>Spam ve reklam yasaktır.</strong> Chat'e sürekli aynı mesajı atmak yasaktır.</span>
+      </div>
+      <div class="rule-item reveal">
+        <span class="rule-num">05</span>
+        <span class="rule-text"><strong>Yönetici kararlarına uy.</strong> Moderatör ve adminlerin kararlarına itiraz edilmez.</span>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <span class="footer-logo">⛏ MCServer</span>
+  <p>© 2026 MCServer — Tüm hakları saklıdır.</p>
+  <p style="margin-top:8px; font-size:13px;">Bu site Minecraft ile resmi bağlantısı olmayan bağımsız bir sunucudur.</p>
+</footer>
+
+<script>
+  // Copy IP
+  function copyIP() {
+    const ip = document.getElementById('ip-text').textContent;
+    navigator.clipboard.writeText(ip).then(() => {
+      const btn = document.querySelector('.copy-btn');
+      btn.textContent = 'Kopyalandı!';
+      setTimeout(() => btn.textContent = 'Kopyala', 2000);
+    });
+  }
+
+  // Scroll reveal
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
